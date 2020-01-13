@@ -3,12 +3,16 @@ package com.example.usbmusictest2;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.documentfile.provider.DocumentFile;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
@@ -54,7 +58,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        mSongRecyclerView = findViewById(R.id.recycler_view_songs);
+        mSongRecyclerView.setHasFixedSize(true);
+        msongLayoutManager = new LinearLayoutManager(this);
+        mSongRecyclerView.setLayoutManager(msongLayoutManager);
+        mSongAdapter = new MySongAdapter(songsArrayList);
+        mSongRecyclerView.setAdapter(mSongAdapter);
+        mSongRecyclerView.addItemDecoration(new DividerItemDecoration(mSongRecyclerView.getContext(), DividerItemDecoration.VERTICAL));
 
+        LocalBroadcastManager.getInstance(this).registerReceiver(songClickBroadcastReceiver, new IntentFilter("song_chosen_from_storage_intent"));
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(songClickBroadcastReceiver);
+        super.onDestroy();
     }
 
     @Override
@@ -131,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
     private BroadcastReceiver songClickBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String uriValueExtra = intent.getStringExtra("UriValue");
+            String uriValueExtra = intent.getStringExtra("uriValue");
             Log.d(TAG, "uri rxd by broadcast: " + uriValueExtra);
             playMedia(Uri.parse(uriValueExtra));
         }

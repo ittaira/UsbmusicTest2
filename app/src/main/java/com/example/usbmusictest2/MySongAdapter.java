@@ -20,6 +20,7 @@ public class MySongAdapter extends RecyclerView.Adapter<MySongAdapter.ViewHolder
 
     private ArrayList<Songs> songsData;
     Context context = myActivityContext;
+    Context context2;
 
     public MySongAdapter(ArrayList<Songs> songsData){
         this.songsData = songsData;
@@ -31,6 +32,8 @@ public class MySongAdapter extends RecyclerView.Adapter<MySongAdapter.ViewHolder
         LayoutInflater layoutInflater = LayoutInflater.from(viewGroup.getContext());
         View songItem = layoutInflater.inflate(R.layout.song_item, viewGroup, false);
         ViewHolder viewHolder = new ViewHolder(songItem);
+        //context.getApplicationContext();
+        context2 = songItem.getContext();
         return viewHolder;
     }
 
@@ -50,7 +53,7 @@ public class MySongAdapter extends RecyclerView.Adapter<MySongAdapter.ViewHolder
             public void onClick(View view) {
                 Intent intent = new Intent("song_chosen_from_storage_intent");
                 intent.putExtra("uriValue", songs.getSongUri().toString());
-                LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+                LocalBroadcastManager.getInstance(context2).sendBroadcast(intent);
             }
         });
 
