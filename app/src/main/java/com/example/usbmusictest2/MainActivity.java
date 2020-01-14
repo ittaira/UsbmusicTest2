@@ -26,12 +26,17 @@ import android.widget.Button;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import static com.example.usbmusictest2.MyUsbMusicService.ACTION_MY_USB_STREAMING_INTENT_FILTER;
+import static com.example.usbmusictest2.MyUsbMusicService.EXTRA_USB_STREAMING_PERFORM_TASK_ID;
+import static com.example.usbmusictest2.MyUsbMusicService.EXTRA_USB_STREAMING_SONG_URI;
+import static com.example.usbmusictest2.MyUsbMusicService.USB_STREAM_TASK_LOAD_SONG;
+
 public class MainActivity extends AppCompatActivity {
 
-    final String TAG = "MainActivity";
-    Button mChooseUsbStreamingButton;
-    ArrayList<Songs> songsArrayList;
-    protected static Context myActivityContext;
+    private final String TAG = "MainActivity";
+    private Button mChooseUsbStreamingButton;
+    private ArrayList<Songs> songsArrayList;
+    //protected static Context myActivityContext;
 
     private RecyclerView mSongRecyclerView;
     private RecyclerView.Adapter mSongAdapter;
@@ -42,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        myActivityContext = getApplicationContext();
+        //myActivityContext = getApplicationContext();
         songsArrayList = new ArrayList<>();
 
         mChooseUsbStreamingButton = findViewById(R.id.button_select_usb);
@@ -73,6 +78,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(songClickBroadcastReceiver);
+        getApplicationContext().stopService(new Intent(getApplicationContext(), MyUsbMusicService.class));
         super.onDestroy();
     }
 
@@ -100,8 +106,13 @@ public class MainActivity extends AppCompatActivity {
                             Songs song = new Songs(fileUri, title, artist, album, fileName);
                             songsArrayList.add(song);
                             mSongAdapter.notifyDataSetChanged();
+                            //Activity activity = getParent().startService(new Intent(getApplicationContext(), MyUsbMusicService.class)); //for using in fragment
+
                         }
                     }
+                }
+                if (songsArrayList.size() > 0) {
+                    getApplicationContext().startService(new Intent(getApplicationContext(), MyUsbMusicService.class));
                 }
 
                 //Log.d(TAG, "songsArrayList length: " + songsArrayList.size());
@@ -147,13 +158,26 @@ public class MainActivity extends AppCompatActivity {
         mediaPlayer.start();
     }
 
-    private BroadcastReceiver songClickBroadcastReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver songClickBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String uriValueExtra = intent.getStringExtra("uriValue");
             Log.d(TAG, "uri rxd by broadcast: " + uriValueExtra);
-            playMedia(Uri.parse(uriValueExtra));
+            //playMedia(Uri.parse(uriValueExtra));  //plays on main thread
+            // below moved to onActivityResult:
+            //Activity activity = getParent().startService(new Intent(getApplicationContext(), MyUsbMusicService.class)); //for using in fragment
+            //getApplicationContext().startService(new Intent(getApplicationContext(), MyUsbMusicService.class));
+
+            //broadcast to service:
+            Intent intentToBroadcastToUsbStreamingService = new Intent(ACTION_MY_USB_STREAMING_INTENT_FILTER);
+            intentToBroadcastToUsbStreamingService.putExtra(EXTRA_USB_STREAMING_PERFORM_TASK_ID, USB_STREAM_TASK_LOAD_SONG);
+            intentToBroadcastToUsbStreamingService.putExtra(EXTRA_USB_STREAMING_SONG_URI, uriValueExtra);
+            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intentToBroadcastToUsbStreamingService);
+            Log.d(TAG, "broadcast sent to usbStreamingService");
+
         }
     };
+
+
 
 }

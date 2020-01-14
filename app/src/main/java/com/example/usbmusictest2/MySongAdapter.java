@@ -14,17 +14,17 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import static com.example.usbmusictest2.MainActivity.myActivityContext;
 
 public class MySongAdapter extends RecyclerView.Adapter<MySongAdapter.ViewHolder> {
 
     private ArrayList<Songs> songsData;
-    Context context = myActivityContext;
-    Context context2;
+    //Context context = myActivityContext;
+    private Context context2;
 
-    public MySongAdapter(ArrayList<Songs> songsData){
+    MySongAdapter(ArrayList<Songs> songsData){
         this.songsData = songsData;
     }
+
 
     @NonNull
     @Override
@@ -64,13 +64,13 @@ public class MySongAdapter extends RecyclerView.Adapter<MySongAdapter.ViewHolder
         return songsData.size();
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder{
-        public TextView artistTextView;
-        public TextView titleTextView;
-        public TextView albumTextView;
-        public ConstraintLayout songConstraintLayout;
+    static class ViewHolder extends RecyclerView.ViewHolder{
+        TextView artistTextView;
+        TextView titleTextView;
+        TextView albumTextView;
+        ConstraintLayout songConstraintLayout;
 
-        public ViewHolder(View itemView){
+        ViewHolder(View itemView){
             super(itemView);
             this.artistTextView = itemView.findViewById(R.id.song_artist_textview);
             this.titleTextView = itemView.findViewById(R.id.song_title_textview);
