@@ -22,6 +22,7 @@ import android.provider.DocumentsContract;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Switch;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,6 +34,8 @@ import static com.example.usbmusictest2.MyUsbMusicService.ACTION_USB_MEDIAPLAYER
 import static com.example.usbmusictest2.MyUsbMusicService.EXTRA_USB_STREAMING_PERFORM_TASK_ID;
 import static com.example.usbmusictest2.MyUsbMusicService.EXTRA_USB_STREAMING_SONG_URI;
 import static com.example.usbmusictest2.MyUsbMusicService.USB_STREAM_TASK_LOAD_SONG;
+import static com.example.usbmusictest2.MyUsbMusicService.USB_STREAM_TASK_PAUSE_PLAYING;
+import static com.example.usbmusictest2.MyUsbMusicService.USB_STREAM_TASK_RESUME_PLAYING;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -42,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private Button mOrganizeSongsButton;
     private Button mNextSongButton;
     private Button mPrevSongButton;
+    private Switch mIsMusicPlayingSwitch;
     private ArrayList<Songs> songsArrayList;
     private int currentSongPlayingIndex;
     //protected static Context myActivityContext;
@@ -106,11 +110,10 @@ public class MainActivity extends AppCompatActivity {
                     if (currentSongPlayingIndex >= songsArrayList.size()){
                         currentSongPlayingIndex = 0;
                     }
-                    sendSongToService(songsArrayList.get(currentSongPlayingIndex).getSongUri().toString());
+                    sendBroadcastToUsbStreamService(songsArrayList.get(currentSongPlayingIndex).getSongUri().toString(), USB_STREAM_TASK_LOAD_SONG);
                 }
             }
         });
-
 
         mPrevSongButton = findViewById(R.id.button_prev_song);
         mPrevSongButton.setOnClickListener(new View.OnClickListener() {
@@ -121,7 +124,21 @@ public class MainActivity extends AppCompatActivity {
                     if (currentSongPlayingIndex < 0){
                         currentSongPlayingIndex = (songsArrayList.size() - 1);
                     }
-                    sendSongToService(songsArrayList.get(currentSongPlayingIndex).getSongUri().toString());
+                    sendBroadcastToUsbStreamService(songsArrayList.get(currentSongPlayingIndex).getSongUri().toString(),USB_STREAM_TASK_LOAD_SONG);
+                }
+            }
+        });
+
+        mIsMusicPlayingSwitch = findViewById(R.id.switch_is_playing);
+        mIsMusicPlayingSwitch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (mIsMusicPlayingSwitch.isChecked()){
+                    mIsMusicPlayingSwitch.setText("playing");
+                    sendBroadcastToUsbStreamService("", USB_STREAM_TASK_RESUME_PLAYING);
+                }else {
+                    mIsMusicPlayingSwitch.setText("paused");
+                    sendBroadcastToUsbStreamService("", USB_STREAM_TASK_PAUSE_PLAYING);
                 }
             }
         });
@@ -234,7 +251,9 @@ public class MainActivity extends AppCompatActivity {
             //Activity activity = getParent().startService(new Intent(getApplicationContext(), MyUsbMusicService.class)); //for using in fragment
             //getApplicationContext().startService(new Intent(getApplicationContext(), MyUsbMusicService.class));
 
-            sendSongToService(uriValueExtra);
+            mIsMusicPlayingSwitch.setChecked(true);
+            mIsMusicPlayingSwitch.setText("playing");
+            sendBroadcastToUsbStreamService(uriValueExtra, USB_STREAM_TASK_LOAD_SONG);
             /*
             //broadcast to service:
             Intent intentToBroadcastToUsbStreamingService = new Intent(ACTION_MY_USB_STREAMING_INTENT_FILTER);
@@ -262,7 +281,7 @@ public class MainActivity extends AppCompatActivity {
 
                 }
 
-                sendSongToService(songsArrayList.get(currentSongPlayingIndex).getSongUri().toString());
+                sendBroadcastToUsbStreamService(songsArrayList.get(currentSongPlayingIndex).getSongUri().toString(),USB_STREAM_TASK_LOAD_SONG);
                 /*
                 //broadcast to service:
                 Intent intentToBroadcastToUsbStreamingService = new Intent(ACTION_MY_USB_STREAMING_INTENT_FILTER);
@@ -275,14 +294,16 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private void sendSongToService(String songUriString){
+    private void sendBroadcastToUsbStreamService(String songUriString, int task){
         //broadcast to service
         Intent intentToBroadcastToUsbStreamingService = new Intent(ACTION_MY_USB_STREAMING_INTENT_FILTER);
-        intentToBroadcastToUsbStreamingService.putExtra(EXTRA_USB_STREAMING_PERFORM_TASK_ID, USB_STREAM_TASK_LOAD_SONG);
+        intentToBroadcastToUsbStreamingService.putExtra(EXTRA_USB_STREAMING_PERFORM_TASK_ID, task);
         intentToBroadcastToUsbStreamingService.putExtra(EXTRA_USB_STREAMING_SONG_URI, songUriString);
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intentToBroadcastToUsbStreamingService);
         Log.d(TAG, "broadcast sent to usbStreamingService");
 
     }
+
+
 
 }
