@@ -40,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
     private Button mChooseUsbStreamingButton;
     private Button mShuffleSongsButton;
     private Button mOrganizeSongsButton;
+    private Button mNextSongButton;
+    private Button mPrevSongButton;
     private ArrayList<Songs> songsArrayList;
     private int currentSongPlayingIndex;
     //protected static Context myActivityContext;
@@ -93,6 +95,35 @@ public class MainActivity extends AppCompatActivity {
                 mSongAdapter.notifyDataSetChanged();
             }
 
+        });
+
+        mNextSongButton = findViewById(R.id.button_next_song);
+        mNextSongButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (songsArrayList.size() > 0){
+                    currentSongPlayingIndex ++;
+                    if (currentSongPlayingIndex >= songsArrayList.size()){
+                        currentSongPlayingIndex = 0;
+                    }
+                    sendSongToService(songsArrayList.get(currentSongPlayingIndex).getSongUri().toString());
+                }
+            }
+        });
+
+
+        mPrevSongButton = findViewById(R.id.button_prev_song);
+        mPrevSongButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (songsArrayList.size() > 0){
+                    currentSongPlayingIndex --;
+                    if (currentSongPlayingIndex < 0){
+                        currentSongPlayingIndex = (songsArrayList.size() - 1);
+                    }
+                    sendSongToService(songsArrayList.get(currentSongPlayingIndex).getSongUri().toString());
+                }
+            }
         });
 
         mSongRecyclerView = findViewById(R.id.recycler_view_songs);
@@ -203,13 +234,15 @@ public class MainActivity extends AppCompatActivity {
             //Activity activity = getParent().startService(new Intent(getApplicationContext(), MyUsbMusicService.class)); //for using in fragment
             //getApplicationContext().startService(new Intent(getApplicationContext(), MyUsbMusicService.class));
 
+            sendSongToService(uriValueExtra);
+            /*
             //broadcast to service:
             Intent intentToBroadcastToUsbStreamingService = new Intent(ACTION_MY_USB_STREAMING_INTENT_FILTER);
             intentToBroadcastToUsbStreamingService.putExtra(EXTRA_USB_STREAMING_PERFORM_TASK_ID, USB_STREAM_TASK_LOAD_SONG);
             intentToBroadcastToUsbStreamingService.putExtra(EXTRA_USB_STREAMING_SONG_URI, uriValueExtra);
             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intentToBroadcastToUsbStreamingService);
             Log.d(TAG, "broadcast sent to usbStreamingService");
-
+             */
         }
     };
 
@@ -229,18 +262,27 @@ public class MainActivity extends AppCompatActivity {
 
                 }
 
+                sendSongToService(songsArrayList.get(currentSongPlayingIndex).getSongUri().toString());
+                /*
                 //broadcast to service:
                 Intent intentToBroadcastToUsbStreamingService = new Intent(ACTION_MY_USB_STREAMING_INTENT_FILTER);
                 intentToBroadcastToUsbStreamingService.putExtra(EXTRA_USB_STREAMING_PERFORM_TASK_ID, USB_STREAM_TASK_LOAD_SONG);
                 intentToBroadcastToUsbStreamingService.putExtra(EXTRA_USB_STREAMING_SONG_URI, songsArrayList.get(currentSongPlayingIndex).getSongUri().toString());
                 LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intentToBroadcastToUsbStreamingService);
                 Log.d(TAG, "broadcast sent to usbStreamingService");
-
+                 */
             }
-
-
-
         }
     };
+
+    private void sendSongToService(String songUriString){
+        //broadcast to service
+        Intent intentToBroadcastToUsbStreamingService = new Intent(ACTION_MY_USB_STREAMING_INTENT_FILTER);
+        intentToBroadcastToUsbStreamingService.putExtra(EXTRA_USB_STREAMING_PERFORM_TASK_ID, USB_STREAM_TASK_LOAD_SONG);
+        intentToBroadcastToUsbStreamingService.putExtra(EXTRA_USB_STREAMING_SONG_URI, songUriString);
+        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intentToBroadcastToUsbStreamingService);
+        Log.d(TAG, "broadcast sent to usbStreamingService");
+
+    }
 
 }
