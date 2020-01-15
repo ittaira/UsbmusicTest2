@@ -24,7 +24,8 @@ public class MyUsbMusicService extends Service {
                 ACTION_MY_USB_STREAMING_INTENT_FILTER = MyUsbMusicService.class.getName() + "My_usb_streaming_change_song",
                 EXTRA_USB_STREAMING_SONG_URI = MyUsbMusicService.class.getName() + "My_usb_streaming_song_uri",
                 EXTRA_USB_STREAMING_PERFORM_TASK_ID = MyUsbMusicService.class.getName() + "My_usb_streaming_task_id",
-                EXTRA_USB_STREAMING_VOLUME = MyUsbMusicService.class.getName() + "My_usb_streaming_volume";
+                EXTRA_USB_STREAMING_VOLUME = MyUsbMusicService.class.getName() + "My_usb_streaming_volume",
+                ACTION_USB_MEDIAPLAYER_SONG_COMPLETED = MyUsbMusicService.class.getName() + "My_usb_song_completed";
 
     final static int USB_STREAM_TASK_LOAD_SONG = 1,
                     USB_STREAM_TASK_RESUME_PLAYING = 2,
@@ -148,7 +149,6 @@ public class MyUsbMusicService extends Service {
         if (myUsbMediaPlayer.isPlaying()){
             myUsbMediaPlayer.pause();
             myUsbMediaPlayer.reset();
-            //myUsbMediaPlayer.release(); //todo: check if "release" does not cause crashes. added myself 14Jan2020
         }
         new UsbPlayerAsyncTask().execute(mySongUriString);
         isUsbMediaPlayerPlaying = true;
@@ -168,7 +168,10 @@ public class MyUsbMusicService extends Service {
                 myUsbMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                     @Override
                     public void onCompletion(MediaPlayer mediaPlayer) {
-
+                        Log.d(TAG, "song onCompletion called");
+                        //send broadcast to play next song
+                        Intent intent = new Intent(ACTION_USB_MEDIAPLAYER_SONG_COMPLETED);
+                        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
                     }
                 });
                 myUsbMediaPlayer.prepare();

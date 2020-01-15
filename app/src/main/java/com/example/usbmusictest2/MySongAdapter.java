@@ -38,7 +38,7 @@ public class MySongAdapter extends RecyclerView.Adapter<MySongAdapter.ViewHolder
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, final int position) {
         final Songs songs = songsData.get(position);
         if (songsData.get(position).getTitle() == null || songsData.get(position).getTitle().isEmpty()){
             holder.titleTextView.setText(songsData.get(position).getFilename());
@@ -53,6 +53,7 @@ public class MySongAdapter extends RecyclerView.Adapter<MySongAdapter.ViewHolder
             public void onClick(View view) {
                 Intent intent = new Intent("song_chosen_from_storage_intent");
                 intent.putExtra("uriValue", songs.getSongUri().toString());
+                intent.putExtra("index_number", position);
                 LocalBroadcastManager.getInstance(context2).sendBroadcast(intent);
             }
         });

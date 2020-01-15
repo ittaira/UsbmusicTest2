@@ -25,8 +25,11 @@ import android.widget.Button;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import static com.example.usbmusictest2.MyUsbMusicService.ACTION_MY_USB_STREAMING_INTENT_FILTER;
+import static com.example.usbmusictest2.MyUsbMusicService.ACTION_USB_MEDIAPLAYER_SONG_COMPLETED;
 import static com.example.usbmusictest2.MyUsbMusicService.EXTRA_USB_STREAMING_PERFORM_TASK_ID;
 import static com.example.usbmusictest2.MyUsbMusicService.EXTRA_USB_STREAMING_SONG_URI;
 import static com.example.usbmusictest2.MyUsbMusicService.USB_STREAM_TASK_LOAD_SONG;
@@ -35,7 +38,10 @@ public class MainActivity extends AppCompatActivity {
 
     private final String TAG = "MainActivity";
     private Button mChooseUsbStreamingButton;
+    private Button mShuffleSongsButton;
+    private Button mOrganizeSongsButton;
     private ArrayList<Songs> songsArrayList;
+    private int currentSongPlayingIndex;
     //protected static Context myActivityContext;
 
     private RecyclerView mSongRecyclerView;
@@ -63,6 +69,32 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        mShuffleSongsButton = findViewById(R.id.button_suffle_list);
+        mShuffleSongsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (songsArrayList != null && mSongRecyclerView != null){
+                    Collections.shuffle(songsArrayList);
+                    mSongAdapter.notifyDataSetChanged();
+                }
+            }
+        });
+
+        mOrganizeSongsButton = findViewById(R.id.button_order_list);
+        mOrganizeSongsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Collections.sort(songsArrayList, new Comparator<Songs>() {
+                    @Override
+                    public int compare(Songs songs, Songs t1) {
+                        return songs.getAtrist().toUpperCase().compareTo(t1.getAtrist().toUpperCase());
+                    }
+                });
+                mSongAdapter.notifyDataSetChanged();
+            }
+
+        });
+
         mSongRecyclerView = findViewById(R.id.recycler_view_songs);
         mSongRecyclerView.setHasFixedSize(true);
         msongLayoutManager = new LinearLayoutManager(this);
@@ -72,12 +104,14 @@ public class MainActivity extends AppCompatActivity {
         mSongRecyclerView.addItemDecoration(new DividerItemDecoration(mSongRecyclerView.getContext(), DividerItemDecoration.VERTICAL));
 
         LocalBroadcastManager.getInstance(this).registerReceiver(songClickBroadcastReceiver, new IntentFilter("song_chosen_from_storage_intent"));
+        LocalBroadcastManager.getInstance(this).registerReceiver(songFinishedPlayingReceiver, new IntentFilter(ACTION_USB_MEDIAPLAYER_SONG_COMPLETED));
 
     }
 
     @Override
     protected void onDestroy() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(songClickBroadcastReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(songFinishedPlayingReceiver);
         getApplicationContext().stopService(new Intent(getApplicationContext(), MyUsbMusicService.class));
         super.onDestroy();
     }
@@ -163,6 +197,7 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             String uriValueExtra = intent.getStringExtra("uriValue");
             Log.d(TAG, "uri rxd by broadcast: " + uriValueExtra);
+            currentSongPlayingIndex = intent.getIntExtra("index_number", -1);
             //playMedia(Uri.parse(uriValueExtra));  //plays on main thread
             // below moved to onActivityResult:
             //Activity activity = getParent().startService(new Intent(getApplicationContext(), MyUsbMusicService.class)); //for using in fragment
@@ -179,5 +214,33 @@ public class MainActivity extends AppCompatActivity {
     };
 
 
+    private BroadcastReceiver songFinishedPlayingReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "Broadcast of song ended received");
+            if (songsArrayList.size() > 0){
+                currentSongPlayingIndex ++;
+                if (currentSongPlayingIndex < songsArrayList.size()){
+                    Log.d(TAG,"current song playing index: " + currentSongPlayingIndex);
+                }
+                else if (currentSongPlayingIndex >= songsArrayList.size()){
+                    currentSongPlayingIndex = 0;
+                    Log.d(TAG,"current song playing index2: " + currentSongPlayingIndex);
+
+                }
+
+                //broadcast to service:
+                Intent intentToBroadcastToUsbStreamingService = new Intent(ACTION_MY_USB_STREAMING_INTENT_FILTER);
+                intentToBroadcastToUsbStreamingService.putExtra(EXTRA_USB_STREAMING_PERFORM_TASK_ID, USB_STREAM_TASK_LOAD_SONG);
+                intentToBroadcastToUsbStreamingService.putExtra(EXTRA_USB_STREAMING_SONG_URI, songsArrayList.get(currentSongPlayingIndex).getSongUri().toString());
+                LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intentToBroadcastToUsbStreamingService);
+                Log.d(TAG, "broadcast sent to usbStreamingService");
+
+            }
+
+
+
+        }
+    };
 
 }
